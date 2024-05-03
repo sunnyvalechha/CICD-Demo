@@ -14,6 +14,13 @@ Challenges of manual work:
 3. Time consuming
 4. Error prone
 
+Multiple Environments present:
+1. Dev Environment: where developers write code.
+2. QA / Test Environment: 
+3. UAT Environment: User Acceptance testing Environment
+4. Pilot Environment or Pre production Environment: Performance test, how application is performing.
+5. Production Environment: Go Live
+
 **Now, Entry of DevOps**
 
 Development + Operations 
