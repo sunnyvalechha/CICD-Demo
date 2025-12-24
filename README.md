@@ -41,6 +41,7 @@ aws --version
 
 #Jenkins
 sudo apt install fontconfig openjdk-21-jre -y
+apt install openjdk-21-jdk -y
 sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
   https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
 echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
@@ -81,7 +82,7 @@ sudo chmod 777 /var/run/docker.sock
 vi /etc/sudoers
 jenkins ALL=(ALL) NOPASSWD: ALL
 
-Jenkins pass - 92300ce0b05a4d3383aea6e1b41bb5f5
+Jenkins pass - ff80c5943fc5450bb2b51df25e9f2793
 
 # Plugins install in jenkins
 * Maven Integration 
@@ -96,7 +97,7 @@ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scrip
 chmod 700 get_helm.sh
 ./get_helm.sh
 
-# Attach Iam role to jenkins machine which created for eks cluster. (create admin access role & attach to both machines)
+# aws configure for both machine  (give admin creds)
 
 # No connectivity between jenkins & kubernetes:
 - copy k8s config file from eks jump machine to jenkins server
@@ -135,15 +136,122 @@ su - jenkins | helm list
 helm repo list
 helm repo add stable https://charts.helm.sh/stable
 helm search repo stable | less
-helm pull stable/mysql
+helm pull stable/mysql  # not directly downloading as we have to modify chart
 ls -lrth > mysql-1.6.9.tgz 	# chart downloaded as package
 tar xvf mysql-1.6.9.tgz
 cd mysql
 ls -lrth templates		# all this list will created once run this chart
-helm package mysql
-==========================================
-Dev: Project development team
-Ops: Build & Deploy team
+cd templates 
+cp NOTES.txt NOTES_OLD.txt 	# we made change
+vi Charts.yml		# change the version from 1.6.9 to 1.7.0
+helm package mysql	# it again create a tar
+Note: modification was just for a demo, we will use the original one only
+* Check on eks cluster if there any existing pods, before installing helm
+helm install mysqldatabase mysql-1.6.9.tgz
+helm list 		# list all deployments in helm
+* check pods in eks
+helm uninstall mysqldatabase	# all resources delete from eks
+
+
+# CI section with Declarative pipeline:
+
+* A job will pickup the code from git.
+* It will build the code through maven (plugin installed).
+* Once the build is completed, a docker image is created and these artifact is stored in docker registry.
+
+Pipeline stages:
+* clone repository
+* build image, artifact created
+* image pushed into docker
+
+DockerHub
+sunnyvalechha
+MH12ql8641
+
+Jenkins > Settings > tools > 
+Jdk name: JDK21
+JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
+
+Maven: maven-3.9.12
+MAVEN_HOME: /opt/apache-maven-3.9.12
+
+# configure docker creds
+Jenkins > Settings > tools > global creds > add creds > put dockerhub creds as username & password
+
+New item > pet-app-build > Pipeline > 
+
+Pipeline
+Define your Pipeline using Groovy directly or pull it from source control.
+Definition - Pipeline script from SCM
+SCM - Git
+Repository URL - https://github.com/sunnyvalechha/cloudfreak.git
+
+# Declaritive script:
+
+=======================================jenkins pipeline================================
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven-3.9.12'
+        jdk 'JDK21'
+    }
+
+    stages {
+
+        stage('Build Maven') {
+            steps {
+                sh 'pwd'
+				sh 'cd /opt/apache-maven-3.9.12'
+                sh 'mvn clean package'
+				sh 'mvn package'
+            }
+        }
+
+        stage('Copy Artifact') {
+            steps {
+                sh 'pwd'
+                sh 'mkdir -p docker'
+                sh 'cp target/*.jar docker/'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def customImage = docker.build(
+                        "initsixcloud/petclinic:${env.BUILD_NUMBER}",
+                        "./docker"
+                    )
+
+                    docker.withRegistry(
+                        'https://registry.hub.docker.com',
+                        'dockerhub'
+                    ) {
+                        customImage.push()
+                    }
+                }
+            }
+        }
+    }
+}
+=================================================================
+
+CD on Kubernetes:
+
+* In some prod scenerios, companies setup CI run as seperate job and CD runs as seperate job.
+* Here, Jenkins will pull the image from docker and deploy on EKS
+
+git repo: https://github.com/sunnyvalechha/petclinic-cicd-demo-testing.git
+
+* Create another build for this and run.
+
+# Metric server - It collects metrics like CPU, memory or Disk IO consumption for containers or nodes, from the Summary API, exposed by Kubelet on each node.
+
+https://github.com/initsixcloud/kubernetes/blob/main/Metric-server.MD
+
+kubectl top nodes
+kubectl top pods 
 
 
 
