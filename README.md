@@ -1,6 +1,11 @@
-How Build and Deployment Process works before CICD pipeline of Jenkins?
+- What is an agent in a declarative pipeline?
 
-Step 1: One or multiple Developement team start planning and working on application.
+In a Jenkins Pipeline, "agent any" is a way to tell Jenkins to execute the pipeline on any available agent (node) connected to the controller, letting Jenkins dynamically pick the next free machine.
+
+
+How does the Build and Deployment Process work before the CICD pipeline of Jenkins?
+
+Step 1: One or multiple development teams start planning and working on the application.
 Step 2: They push their code to Central repository (Github)
 Step 3: After all the peices of code pushed into github we will Build the code, as the code is raw code and not in usable format that means we have to create the .exe of code.
 Step 4: Test the code, when the build is created we will test the code if the build code is working fine.
@@ -97,9 +102,9 @@ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scrip
 chmod 700 get_helm.sh
 ./get_helm.sh
 
-# aws configure for both machine  (give admin creds)
+# aws configure for both machines  (give admin creds)
 
-# No connectivity between jenkins & kubernetes:
+# No connectivity between Jenkins & Kubernetes:
 - copy k8s config file from eks jump machine to jenkins server
 - Login to eks jump machine > login as root > ls -lrtha > .kube dir > copy content of config file >
 - In Jenkins server cd /var/lib/jenkins > mkdir .kube > vi config > paste the content
@@ -162,20 +167,20 @@ helm uninstall mysqldatabase	# all resources delete from eks
 Pipeline stages:
 * clone repository
 * build image, artifact created
-* image pushed into docker
+* image pushed into Docker
 
 DockerHub
 sunnyvalechha
 MH12ql8641
 
 Jenkins > Settings > tools > 
-Jdk name: JDK21
+JDK name: JDK21
 JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
 
 Maven: maven-3.9.12
 MAVEN_HOME: /opt/apache-maven-3.9.12
 
-# configure docker creds
+# configure Docker creds
 Jenkins > Settings > tools > global creds > add creds > put dockerhub creds as username & password
 
 New item > pet-app-build > Pipeline > 
@@ -236,6 +241,8 @@ pipeline {
     }
 }
 =================================================================
+
+
 
 CD on Kubernetes:
 
